@@ -1,17 +1,17 @@
 {
   "node" : ["https://us-east.nachowyborski.xyz/", "https://us-west.nachowyborski.xyz/", "https://de.nachowyborksi.xyz/", "https://turkey.nachowyborski.xyz/", "https://india.nachowyborski.xyz/", "https://singapore.nachowyborski.xyz/", "https://brazil.nachowyborski.xyz/", "https://italy.nachowyborski.xyz/"],
   "network" : "testnet-10",
-  "paymentInterval": 12,
-  "pool_id" : "us01-pool1",
+  "paymentInterval":2,
+  "pool_id" : "us01-pool",
   "location" : "us-central",
-  "hostname" : "us01-coinchimp.xyz",  
+  "hostname" : "us01-pool.coinchimp.xyz",  
   "stratum": {
     "port": 7777,
     "templates": {
       "cacheSize": 300
     },
-    "difficulty": 4,
-    "sharesPerMinute": 20
+    "difficulty": 2,
+    "sharesPerMinute": 10
 
   },
   "treasury": {

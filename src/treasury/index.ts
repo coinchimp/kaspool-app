@@ -9,6 +9,8 @@ export default class Treasury extends EventEmitter {
   context: UtxoContext
   fee: number
   private monitoring: Monitoring;
+  private matureEventCounter = 0;
+  private totalReward = 0n;
   
   constructor (rpc: RpcClient, networkId: string, privateKey: string, fee: number) {
     super()
@@ -34,10 +36,23 @@ export default class Treasury extends EventEmitter {
     this.processor.addEventListener('maturity', (e) => {
       // @ts-ignore
       const reward = e.data.value
-      this.monitoring.log(`Treasury: Rewards to distribute on this coinbase cycle :  ${reward}.`);
-      const poolFee = (reward * BigInt(this.fee * 100)) / 10000n
-      this.monitoring.log(`Treasury: Pool fees to distribute on the coinbase cycle: ${poolFee}.`);
-      this.emit('coinbase', reward - poolFee, poolFee)     
+      this.monitoring.log(`Treasury: Rewards to distribute on this coinbase cycle:  ${reward}.`);
+    
+      // Increment the counter and accumulate the rewards
+      this.matureEventCounter++;
+      this.totalReward += reward;
+    
+      // Check if 10 mature events have occurred
+      if (this.matureEventCounter === 10) {
+        const poolFee = (this.totalReward * BigInt(this.fee * 100)) / 10000n
+        this.monitoring.log(`Treasury: Pool fees to distribute on the coinbase cycle: ${poolFee}.`);
+    
+        this.emit('coinbase', this.totalReward - poolFee, poolFee) 
+    
+        // Reset the counter and totalReward
+        this.matureEventCounter = 0;
+        this.totalReward = 0n;
+      }
     })
 
     this.processor.start()

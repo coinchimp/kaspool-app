@@ -60,7 +60,7 @@ services:
     container_name: kaspool-prmths
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus_data:/prometheus
+#      - ./prometheus_data:/prometheus
     networks:
       - backend       
     command:
