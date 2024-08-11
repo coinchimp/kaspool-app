@@ -373,7 +373,7 @@ The `Pool` class is designed to manage the interactions between the mining pool'
 - **Parameters**: `treasury`, `stratum`
 - **Function**:
   - Initializes the `treasury`, `stratum`, `database`, and `monitoring` properties.
-  - Sets up event listeners for miner subscriptions (`subscription`), coinbase transactions (`coinbase`).
+  - Sets up event listeners for miner subscriptions (`subscription`), rewards allocation transactions to miners (`allocation`).
 
 #### Methods
 

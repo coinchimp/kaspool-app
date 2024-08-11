@@ -36,7 +36,8 @@ export default class Treasury extends EventEmitter {
     this.processor.addEventListener('maturity', (e) => {
       // @ts-ignore
       const reward = e.data.value
-      this.monitoring.log(`Treasury: Rewards to distribute on this coinbase cycle:  ${reward}.`);
+      this.monitoring.log(`Treasury: Maturity event found - Rewards:  ${reward}.`);
+      this.monitoring.log(`Treasury: Accumulated rewards for next allocation:  ${this.totalReward}.`);
     
       // Increment the counter and accumulate the rewards
       this.matureEventCounter++;
@@ -45,9 +46,10 @@ export default class Treasury extends EventEmitter {
       // Check if 10 mature events have occurred
       if (this.matureEventCounter === 10) {
         const poolFee = (this.totalReward * BigInt(this.fee * 100)) / 10000n
-        this.monitoring.log(`Treasury: Pool fees to distribute on the coinbase cycle: ${poolFee}.`);
+        this.monitoring.log(`Treasury: Pool fees to distribute on this cycle: ${poolFee}.`);
+        this.monitoring.log(`Treasury: TOTAL Rewards to distribute on this cycle on this cycle: ${this.totalReward}.`);
     
-        this.emit('coinbase', this.totalReward - poolFee, poolFee) 
+        this.emit('allocation', this.totalReward - poolFee, poolFee) 
     
         // Reset the counter and totalReward
         this.matureEventCounter = 0;

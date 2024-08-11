@@ -28,7 +28,7 @@ export default class Pool {
     this.sharesManager = sharesManager; // Initialize SharesManager
 
     this.stratum.on('subscription', (ip: string, agent: string) => this.monitoring.log(`Pool: Miner ${ip} subscribed into notifications with ${agent}.`));
-    this.treasury.on('coinbase', (minerReward: bigint, poolFee: bigint) => this.allocate(minerReward,poolFee));
+    this.treasury.on('allocation', (minerReward: bigint, poolFee: bigint) => this.allocate(minerReward,poolFee));
     //this.treasury.on('revenue', (amount: bigint) => this.revenuize(amount));
 
     this.monitoring.log(`Pool: Pool is active on port ${this.stratum.server.socket.port}.`);
@@ -39,7 +39,7 @@ export default class Pool {
     const address = this.treasury.address; // Use the treasury address
     const minerId = 'pool'; // Use a fixed ID for the pool itself
     await this.database.addBalance(minerId, address, amount); // Use the total amount as the share
-    this.monitoring.log(`Pool: Treasury generated ${sompiToKaspaStringWithSuffix(amount, this.treasury.processor.networkId!)} revenue over last coinbase.`);
+    this.monitoring.log(`Pool: Treasury generated ${sompiToKaspaStringWithSuffix(amount, this.treasury.processor.networkId!)} revenue over last allocation process.`);
   }
 
   private async allocate(minerReward: bigint, poolFee: bigint) {
