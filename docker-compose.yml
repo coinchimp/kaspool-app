@@ -42,7 +42,7 @@ services:
     restart: always
 
   kaspool-payment:
-    image: ghcr.io/coinchimp/kaspool-payment:v2408.1b-main
+    image: ghcr.io/coinchimp/kaspool-payment:v2408.1b-coinchimp-240811
     container_name: kaspool-payment   
     depends_on:
       - postgres
