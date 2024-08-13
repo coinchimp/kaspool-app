@@ -64,13 +64,21 @@ for (const envVar of requiredEnvVars) {
 
 monitoring.log(`Main: network: ${config.network}`);
 
-const resolverOptions = config.node && config.node.length > 0 ? { urls: config.node } : {};
+let rpc;
 
-const rpc = new RpcClient({
-  resolver: new Resolver(resolverOptions),
-  encoding: Encoding.Borsh,
-  networkId: config.network,
-});
+if (config.node && config.node.length > 0) {
+  rpc = new RpcClient({
+    resolver: new Resolver({ urls: config.node }),
+    encoding: Encoding.Borsh,
+    networkId: config.network,
+  });
+} else {
+  rpc = new RpcClient({
+    resolver: new Resolver(),
+    encoding: Encoding.Borsh,
+    networkId: config.network,
+  });
+}
 
 await rpc.connect();
 
