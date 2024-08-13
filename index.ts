@@ -52,7 +52,7 @@ for (const key of requiredConfigKeys) {
   }
 }
 // Check if .env file exists and has minimal required environment variables
-const envPath = path.resolve('.env');
+const envPath = path.resolve('./.env');
 if (!fs.existsSync(envPath)) {
   throw new Error('.env file is missing.');
 }
