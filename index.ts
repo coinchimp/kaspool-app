@@ -69,15 +69,17 @@ let rpc;
 if (config.node && config.node.length > 0) {
   rpc = new RpcClient({
     resolver: new Resolver({ urls: config.node }),
-    //encoding: Encoding.Borsh,
+    encoding: Encoding.Borsh,
     networkId: config.network,
   });
+  monitoring.debug(`Main: using node configuration for RPC connection`);
 } else {
   rpc = new RpcClient({
     resolver: new Resolver(),
-    //encoding: Encoding.Borsh,
+    encoding: Encoding.Borsh,
     networkId: config.network,
   });
+  monitoring.debug(`Main: using public Resolver for RPC connection`);
 }
 
 await rpc.connect();
