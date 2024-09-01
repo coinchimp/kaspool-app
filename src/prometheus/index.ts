@@ -102,12 +102,10 @@ export class PushMetrics {
     this.pushGateway = new Pushgateway<RegistryContentType>(pushGatewayUrl);
     this.monitoring = new Monitoring();
     this.db = db;
-    // Delay the initialization of metrics to ensure that 'this.db' is properly initialized
     setTimeout(() => {
       this.initializeMetrics();
     }, 120000);    
     setInterval(() => this.pushMetrics(), 60000); // Push metrics every 1 minute
-
   }
 
   async pushMetrics() {
@@ -155,7 +153,6 @@ export class PushMetrics {
       minedBlocksGauge,
       paidBlocksGauge,
       jobsNotFound,
-      varDiff,
     ];
   
     for (const gauge of gauges) {

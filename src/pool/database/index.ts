@@ -11,9 +11,8 @@ import {
   minerStaleShares,
   minedBlocksGauge,
   paidBlocksGauge,
-  jobsNotFound,
-  varDiff
-} from '../../prometheus/index'
+  jobsNotFound
+} from '../../prometheus/index';
 
 type Miner = {
   balance: bigint;
@@ -31,7 +30,6 @@ const gaugeNames = new Map<Gauge<string>, string>([
   [minedBlocksGauge, 'mined_blocks_1min_count'],
   [paidBlocksGauge, 'paid_blocks_1min_count'],
   [jobsNotFound, 'jobs_not_found_1min_count'],
-  [varDiff, 'var_diff'],
 ]);
 
 type MinerBalanceRow = {
@@ -130,21 +128,16 @@ export default class Database {
   async getMinerIdsAndWallets() {
     const res = await this.client.query('SELECT DISTINCT miner_id, wallet FROM miners_balance');
   
-    // Define the type for 'row'
     const minerIds = res.rows.map((row: MinerBalanceRow) => row.miner_id);
     const walletAddresses = res.rows.map((row: MinerBalanceRow) => row.wallet);
   
     return { minerIds, walletAddresses };
   }
-  
 
   async initializeGauge(gauge: Gauge<string>, minerId: string, walletAddress: string) {
     const metricName = gaugeNames.get(gauge);
     if (!metricName) throw new Error('Metric name not found for the gauge');
     const lastValue = await this.getLastMetric(metricName, minerId, walletAddress);
-    if (lastValue !== null) {
-      gauge.labels(minerId, walletAddress).set(lastValue);
-    }
+    gauge.labels(minerId, walletAddress).set(lastValue !== null ? lastValue : 0);
   }
-  
 }
