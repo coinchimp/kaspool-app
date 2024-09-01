@@ -1,5 +1,4 @@
 {
-  "node" : ["https://us-east.nachowyborski.xyz/", "https://us-west.nachowyborski.xyz/", "https://de.nachowyborksi.xyz/", "https://turkey.nachowyborski.xyz/", "https://india.nachowyborski.xyz/", "https://singapore.nachowyborski.xyz/", "https://brazil.nachowyborski.xyz/", "https://italy.nachowyborski.xyz/"],
   "network" : "testnet-10",
   "paymentInterval":2,
   "pool_id" : "us01-pool",
@@ -10,8 +9,8 @@
     "templates": {
       "cacheSize": 300
     },
-    "difficulty": 2,
-    "sharesPerMinute": 10
+    "difficulty": 15,
+    "sharesPerMinute": 20
 
   },
   "treasury": {
