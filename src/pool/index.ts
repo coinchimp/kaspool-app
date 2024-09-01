@@ -10,7 +10,7 @@ import { SharesManager } from '../stratum/sharesManager'; // Import SharesManage
 export default class Pool {
   private treasury: Treasury;
   private stratum: Stratum;
-  private database: Database;
+  database: Database;
   private monitoring: Monitoring;
   private sharesManager: SharesManager; // Add SharesManager property  
 

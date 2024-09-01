@@ -69,13 +69,13 @@ let rpc;
 if (config.node && config.node.length > 0) {
   rpc = new RpcClient({
     resolver: new Resolver({ urls: config.node }),
-    encoding: Encoding.Borsh,
+    //encoding: Encoding.Borsh,
     networkId: config.network,
   });
 } else {
   rpc = new RpcClient({
     resolver: new Resolver(),
-    encoding: Encoding.Borsh,
+    //encoding: Encoding.Borsh,
     networkId: config.network,
   });
 }
@@ -97,7 +97,7 @@ const kaspoolPshGw = process.env.PUSHGATEWAY;
 if (!kaspoolPshGw) {
   throw new Error('Environment variable PUSHGATEWAY is not set.');
 }
-export const metrics = new PushMetrics(kaspoolPshGw);
+
 
 sendConfig();
 
@@ -107,6 +107,7 @@ const templates = new Templates(rpc, treasury.address, config.stratum.templates.
 const stratum = new Stratum(templates, config.stratum.port, config.stratum.difficulty, kaspoolPshGw, treasury.address, config.stratum.sharesPerMinute);
 const pool = new Pool(treasury, stratum, stratum.sharesManager);
 
+export const metrics = new PushMetrics(kaspoolPshGw, pool.database);
 
 
 
