@@ -109,7 +109,7 @@ const templates = new Templates(rpc, treasury.address, config.stratum.templates.
 const stratum = new Stratum(templates, config.stratum.port, config.stratum.difficulty, kaspoolPshGw, treasury.address, config.stratum.sharesPerMinute);
 const pool = new Pool(treasury, stratum, stratum.sharesManager);
 
-export const metrics = new PushMetrics(kaspoolPshGw, pool.database);
+//export const metrics = new PushMetrics(kaspoolPshGw, pool.database);
 
 
 
