@@ -6,6 +6,16 @@ import { sompiToKaspaStringWithSuffix } from '../../wasm/kaspa';
 import { DEBUG } from "../../index"
 import { SharesManager } from '../stratum/sharesManager'; // Import SharesManager
 import { PushMetrics } from '../prometheus'; // Import the PushMetrics class
+import axios, { AxiosError } from 'axios';
+import config from "../../config/config.json";
+
+let KASPA_BASE_URL = 'https://api.kaspa.org';
+
+if( config.network === "testnet-10" ) {
+ KASPA_BASE_URL = "https://api-tn10.kaspa.org"
+} else if( config.network === "testnet-11" ) {
+ KASPA_BASE_URL = "https://api-tn11.kaspa.org"
+}
 
 export default class Pool {
   private treasury: Treasury;
@@ -32,17 +42,17 @@ export default class Pool {
     this.pushMetrics = new PushMetrics(process.env.PUSHGATEWAY || ''); // Initialize PushMetrics
 
     this.stratum.on('subscription', (ip: string, agent: string) => this.monitoring.log(`Pool: Miner ${ip} subscribed into notifications with ${agent}.`));
-    this.treasury.on('coinbase', (minerReward: bigint, poolFee: bigint) => {
+    this.treasury.on('coinbase', (minerReward: bigint, poolFee: bigint, txnId: string, daaScore: string) => {
       const currentTimestamp = Date.now();
-      if (currentTimestamp - this.lastProcessedTimestamp < 1000) { // 1 second cooldown
-        this.duplicateEventCount++;
-        this.monitoring.debug(`Pool: Skipping duplicate coinbase event. Last processed: ${this.lastProcessedTimestamp}, Current: ${currentTimestamp}, Duplicate count: ${this.duplicateEventCount}`);
-        return;
-      }
+      // if (currentTimestamp - this.lastProcessedTimestamp < 1000) { // 1 second cooldown
+      //   this.duplicateEventCount++;
+      //   this.monitoring.debug(`Pool: Skipping duplicate coinbase event. Last processed: ${this.lastProcessedTimestamp}, Current: ${currentTimestamp}, Duplicate count: ${this.duplicateEventCount}`);
+      //   return;
+      // }
       this.lastProcessedTimestamp = currentTimestamp;
       this.duplicateEventCount = 0;
       this.monitoring.log(`Pool: Processing coinbase event. Timestamp: ${currentTimestamp}`);
-      this.allocate(minerReward, poolFee).catch(console.error)
+      this.allocate(minerReward, poolFee, txnId, daaScore).catch(console.error)
     });
     //this.treasury.on('revenue', (amount: bigint) => this.revenuize(amount));
 
@@ -56,7 +66,7 @@ export default class Pool {
     this.monitoring.log(`Pool: Treasury generated ${sompiToKaspaStringWithSuffix(amount, this.treasury.processor.networkId!)} revenue over last coinbase.`);
   }
 
-  private async allocate(minerReward: bigint, poolFee: bigint) {
+  private async allocate(minerReward: bigint, poolFee: bigint, txnId: string, daaScore: string) {
     this.monitoring.debug(`Pool: Starting allocation. Miner Reward: ${minerReward}, Pool Fee: ${poolFee}`);
     const works = new Map<string, { minerId: string, difficulty: number }>();
     let totalWork = 0;
@@ -103,6 +113,22 @@ export default class Pool {
 
     const scaledTotal = BigInt(totalWork * 100);
 
+    let block_hash = 'block_hash_placeholder'
+    try {
+      const response = await axios.get(`${KASPA_BASE_URL}/transactions/${txnId}?inputs=false&outputs=false&resolve_previous_outpoints=no`, {
+        timeout: 5000, // Timeout for safety
+      });
+      
+      if (response?.status !== 200 && !response?.data) {
+        this.monitoring.error(`Unexpected status code: ${response.status}`);
+        this.monitoring.error(`Invalid or missing block hash in response data for transaction ${txnId}`);
+      } else {
+        block_hash = response.data.block_hash[0]
+      }
+    } catch (error) {
+        this.handleError(error, `Fetching block hash for transaction ${txnId}`);
+    }
+
     // Allocate rewards proportionally based on difficulty
     for (const [address, work] of works) {
       const scaledWork = BigInt(work.difficulty * 100);
@@ -111,7 +137,7 @@ export default class Pool {
       await this.database.addBalance(work.minerId, address, share);
 
       // Track rewards for the miner
-      this.pushMetrics.updateMinerRewardGauge(address, work.minerId, 'block_hash_placeholder');
+      this.pushMetrics.updateMinerRewardGauge(address, work.minerId, block_hash, daaScore);
 
       if (DEBUG) {
         this.monitoring.debug(`Pool: Reward of ${sompiToKaspaStringWithSuffix(share, this.treasury.processor.networkId!)} was ALLOCATED to ${work.minerId} with difficulty ${work.difficulty}`);
@@ -119,6 +145,19 @@ export default class Pool {
     }
 
     // Handle pool fee revenue
-    if (works.size > 0) this.revenuize(poolFee);
+    if (works.size > 0 && poolFee > 0) this.revenuize(poolFee);
   }
+
+  handleError(error: unknown, context: string): void {
+    if (error instanceof AxiosError) {
+      this.monitoring.error(`API call failed: ${error.message}.`);
+      this.monitoring.error(`${context}`);
+      if (error.response) {
+        this.monitoring.error(`Response status: ${error.response.status}`);
+        if (DEBUG) this.monitoring.error(`Response data: ${JSON.stringify(error.response.data)}`);
+      }
+    } else {
+      this.monitoring.error(`Unexpected error: ${error}`);
+    }
+  } 
 }

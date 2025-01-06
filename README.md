@@ -90,7 +90,7 @@ remember to modify docker-image.yml with your own image.
 
 ### Start and check the pool
 
-To start the pool, you need to run `docker compose up -d` or the required command depending of your dcker setup
+To start the pool, you need to run `docker compose up -d` or the required command depending of your docker setup
 You can use `docker logs -f katpool-app` to see the output of your pool instance. We recommned to use DEBUG=1 at the beginning.
 After ten minites you should be able to connect to the metrics, received info fo the state of the treasury and configurations via port 8080 at the following paths
 
@@ -104,6 +104,38 @@ After ten minites you should be able to connect to the metrics, received info fo
 Optionally, you can add a backup process to the DB. Check the ./backup folder.
 You can build the suggested image via `docker build -t katpool-backup:0.4 .` and uncomment its part in the docker-compose.yml file.
 We recommend to transfer the database dump files to other location as additional protection.
+
+## Service Account Creation and Credentials for Google Cloud Backup
+
+### Creating project in google cloud console
+ - Head over and Login to https://console.cloud.google.com/ 
+ - Go to Topbar right beside the Google Cloud logo
+ - Create New Project
+ - Select your newly created project
+
+### Enabling drive api serivce
+ - From the navigation menu, select API & services (https://console.cloud.google.com/apis/dashboard)
+ - Click on ENABLE APIS AND SERVICES (https://console.cloud.google.com/apis/library)
+ - Go to the Google Workspace in sidebar
+ - Then click on Google Drive API (https://console.cloud.google.com/apis/library/drive.googleapis.com)
+ - Click on Enable button
+ 
+### Creating the google cloud service account 
+ - Go to (https://console.cloud.google.com/iam-admin/serviceaccounts)
+ - Click on CREATE SERVICE ACCOUNT, give the service account name, skip the optional fields
+
+### Creating credentials for the service account
+ - Go to your newly created service account 
+ - Go to KEYS tab and click on ADD KEY -> Create new key -> Key type : JSON
+ - Your credentials json file will be downloaded
+
+### Running cloud backup script
+ - Add that json file to backup folder as "google-credentials.json"
+ - Configure the email address to access the dump file in config as "backupEmailAddress" Then execute the below commads:
+```bash
+  cd backup/
+  bun run cloudBackup.ts fileName.sql
+```
 
 ## How to install locally using bun (not recommended)
 To install dependencies:
@@ -142,8 +174,8 @@ CREATE TABLE IF NOT EXISTS wallet_total (
 );
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
-    wallet_address VARCHAR(255) NOT NULL,
-    amount NUMERIC(20, 8) NOT NULL,
+    wallet_address TEXT[] NOT NULL,
+    amount BIGINT NOT NULL,
     timestamp TIMESTAMP DEFAULT NOW(),
     transaction_hash VARCHAR(255) NOT NULL
 );

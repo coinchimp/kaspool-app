@@ -54,20 +54,15 @@ dotenv.config();
 monitoring.log(`Main: network: ${config.network}`);
 
 const rpc = new RpcClient({
-  url: "localhost:17210", // This is WRPC end point
-  // resolver: new Resolver(
-  //   {
-  //     urls : ["http://localhost:16210/"],
-  //   }
-  // ),
+  resolver: new Resolver(),
   encoding: Encoding.Borsh,
   networkId: config.network,
 });
 
-try{
+try{  
   await rpc.connect();
 } catch(err) {
-  monitoring.error(`Error while connecting to rpc url : ${rpc.url}`)
+  monitoring.error(`Error while connecting to rpc url : ${rpc.url} Error: ${err}`)
 }
 
 monitoring.log(`Main: RPC connection started`)

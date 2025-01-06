@@ -102,7 +102,7 @@ export default class Database {
   async getPaymentsByWallet(wallet: string) {
     const client = await this.pool.connect();
     try {
-      const res = await client.query('SELECT * FROM payments WHERE wallet_address = $1 ORDER BY timestamp DESC', [wallet]);
+      const res = await client.query('SELECT * FROM payments WHERE $1 = ANY(wallet_address) ORDER BY timestamp DESC', [wallet]);
       return res.rows;
     } finally {
       client.release();

@@ -1,5 +1,7 @@
+FROM ubuntu:latest
+
 # Use an official PostgreSQL image as the base
-FROM postgres:16.4
+FROM postgres:latest
 
 # Install cron
 RUN apt-get update && apt-get install -y cron
@@ -14,13 +16,16 @@ COPY backup.sh /backup/backup.sh
 RUN chmod +x /backup/backup.sh
 
 # Create a crontab file
-RUN echo "0 * * * * /backup/backup.sh" > /etc/cron.d/backup-cron
+RUN echo "0 * * * * /backup/backup.sh >> /var/log/cron.log 2>&1" > /etc/cron.d/backup-cron
 
 # Apply cron job
 RUN crontab /etc/cron.d/backup-cron
+
+# Create a log file for cron jobs
+RUN touch /var/log/cron.log
 
 # Create the directory where the backups will be stored
 VOLUME ["/backup"]
 
 # Run the command on container startup
-CMD ["cron", "-f"]
+CMD ["sh", "-c", "printenv > /etc/environment; cron -f"]

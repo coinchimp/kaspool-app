@@ -6,33 +6,100 @@ services:
     networks:
       - backend
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - /root/docker_deployment/postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     env_file:
       - .env
     restart: always
 
+  # Redis service
+  redis:
+    image: redis:latest
+    container_name: redis
+    networks:
+      - backend
+
+  kaspad:
+    container_name: kaspad
+    image: supertypo/rusty-kaspad:v0.15.2
+    restart: unless-stopped
+    ports:
+      - "16111:16111/tcp"
+      - "16110:16110/tcp" # gRPC
+      - "17110:17110/tcp" # wRPC (borsh)
+      - "18110:18110/tcp" # wRPC (json)
+    volumes:
+      - /root/docker_deployment/kaspad_mainnet:/app/data/
+    networks:
+      - backend
+    command: kaspad --yes --nologfiles --disable-upnp --utxoindex --rpclisten=0.0.0.0:16110 --rpclisten-borsh=0.0.0.0:17110 --rpclisten-json=0.0.0.0:18110
+
+  # kaspad: # REGULAR TESTNET
+  #   container_name: kaspad
+  #   image: supertypo/rusty-kaspad:v0.15.2
+  #   restart: unless-stopped
+  #   ports:
+  #     - "16211:16211/tcp"
+  #     - "16210:16210/tcp" # gRPC
+  #     - "17210:17210/tcp" # wRPC (borsh)
+  #     - "18210:18210/tcp" # wRPC (json)
+  #   volumes:
+  #     - /root/docker_deployment/kaspad_testnet10:/app/data/
+  #   networks:
+  #     - backend
+  #   command: kaspad --yes --nologfiles --disable-upnp --utxoindex --testnet --rpclisten=0.0.0.0:16210 --rpclisten-borsh=0.0.0.0:17210 --rpclisten-json=0.0.0.0:18210
+
+  # kaspad: # 10BPS TESTNET
+  #   container_name: kaspad
+  #   image: supertypo/rusty-kaspad:tn11
+  #   restart: unless-stopped
+  #   ports:
+  #     - "16311:16311/tcp"
+  #     - "16310:16310/tcp" # gRPC
+  #     - "17310:17310/tcp" # wRPC (borsh)
+  #     - "18310:18310/tcp" # wRPC (json)
+  #   volumes:
+  #     - /root/docker_deployment/kaspad_testnet11:/app/data/
+  #   networks:
+  #     - backend
+  #   command: kaspad --yes --nologfiles --disable-upnp --utxoindex --testnet --netsuffix=11 --rpclisten=0.0.0.0:16310 --rpclisten-borsh=0.0.0.0:17310 --rpclisten-json=0.0.0.0:18310
+
+  go-app:
+    image: ghcr.io/knackroot-technolabs-llp/katpool-blocktemplate-fetcher:beta-v1.0.1-main  # Build the Go app from the ./app directory
+    pull_policy: always
+    container_name: go-app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - kaspad
+    volumes:
+      - ./config:/app/config
+    networks:
+      - backend
+    restart: always
+
   katpool-app:
-    image: ghcr.io/argonmining/katpool-app:v2408.1b-main
+    image: ghcr.io/knackroot-technolabs-llp/katpool-app:beta-v1.0.1-main
     pull_policy: always
     container_name: katpool-app
     depends_on:
       - postgres
+      - redis
       - katpool-monitor
       - pushgateway
     ports:
-      - "7777:7777"
+      - "8888:7777"
     networks:
       - backend
     volumes:
       - ./config:/app/config
-      - ./wasm:/app/wasm
     env_file:
       - .env
     restart: always
 
   katpool-monitor:
-    image: ghcr.io/argonmining/katpool-monitor:v2408.1b-main
+    image: ghcr.io/knackroot-technolabs-llp/katpool-monitor:beta-v1.0.1-main
     pull_policy: always
     container_name: katpool-monitor
     depends_on:
@@ -47,14 +114,13 @@ services:
     restart: always
 
   katpool-payment:
-    image: ghcr.io/argonmining/katpool-payment:v2408.1b-main
+    image: ghcr.io/knackroot-technolabs-llp/katpool-payment:beta-v1.0.1-main
     pull_policy: always
     container_name: katpool-payment
     depends_on:
       - postgres
     volumes:
       - ./config:/app/config
-      - ./wasm:/app/wasm
     networks:
       - backend
     env_file:
@@ -63,12 +129,13 @@ services:
 
   prometheus:
     image: prom/prometheus
+    user: root
     container_name: katpool-prmths
     depends_on:
       - postgres
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus_data:/prometheus
+      - /root/docker_deployment/prometheus_data:/prometheus
     networks:
       - backend
     command:
@@ -96,18 +163,19 @@ services:
       - prometheus
       - katpool-monitor
     restart: always
-  # postgres-backup:
-  #   image: katpool-backup:0.4
-  #   container_name: katpool-backup
-  #   depends_on:
-  #     - postgres
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./backup/files:/backup/files
-  #   networks:
-  #     - backend
-  #   restart: always
+
+  katpool-backup:
+    image: ghcr.io/knackroot-technolabs-llp/katpool-app-db-backup:beta-v1.0.1-main
+    container_name: katpool-backup
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - /root/docker_deployment/backup/files:/backup/files
+    networks:
+      - backend
+    restart: always
 
 networks:
   backend:

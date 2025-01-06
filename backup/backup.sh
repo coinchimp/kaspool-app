@@ -3,11 +3,6 @@
 # Set the date format for the backup filename
 DATE=$(date +\%Y\%m\%d\%H\%M)
 
-POSTGRES_USER=<db-user>
-POSTGRES_PASSWORD=<db-passwd>
-POSTGRES_DB=<db-name>
-POSTGRES_HOSTNAME='katpool-db' # Configure the hostname.
-
 # Define the backup directory
 BACKUP_DIR="/backup/files"
 mkdir -p $BACKUP_DIR

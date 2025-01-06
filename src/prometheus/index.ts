@@ -16,6 +16,13 @@ export const minerHashRateGauge = new Gauge({
   labelNames: ['miner_id', 'wallet_address']
 });
 
+// Existing Gauges
+export const workerHashRateGauge = new Gauge({
+  name: 'worker_hash_rate_GHps',
+  help: 'Hash rate of worker',
+  labelNames: ['wokername', 'wallet_address']
+});
+
 export const poolHashRateGauge = new Gauge({
   name: 'pool_hash_rate_GHps',
   help: 'Overall hash rate of the pool',
@@ -107,7 +114,7 @@ export const walletHashrateGauge = new Gauge({
 export const minerRewardGauge = new Gauge({
   name: 'miner_rewards',
   help: 'Tracks blocks a miner_id and wallet_address was rewarded for, including timestamp and block hash',
-  labelNames: ['wallet_address', 'miner_id', 'block_hash', 'timestamp']
+  labelNames: ['wallet_address', 'miner_id', 'block_hash', 'daa_score', 'timestamp']
 });
 
 export class PushMetrics {
@@ -160,9 +167,9 @@ export class PushMetrics {
     this.updateGaugeValue(walletHashrateGauge, [walletAddress, timestamp], hashrate);
   }
 
-  async updateMinerRewardGauge(walletAddress: string, minerId: string, blockHash: string) {
+  async updateMinerRewardGauge(walletAddress: string, minerId: string, blockHash: string, daaScores: string) {
     const timestamp = new Date().toISOString();
-    this.updateGaugeValue(minerRewardGauge, [walletAddress, minerId, blockHash, timestamp], 1);
+    this.updateGaugeValue(minerRewardGauge, [walletAddress, minerId, blockHash, daaScores, timestamp], 1);
   }
 
   updateGaugeValue(gauge: Gauge, labels: string[], value: number) {

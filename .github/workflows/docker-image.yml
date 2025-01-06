@@ -26,10 +26,20 @@ jobs:
 
       - name: Docker Build
         env:
-          IMAGE_NAME: ${{ github.repository }}:v2408.1b-${{ env.branch_name }}
+          IMAGE_NAME: ${{ github.repository }}:beta-v1.0.1-${{ env.branch_name }}
         run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} .
 
       - name: Docker Push
         env:
-          IMAGE_NAME: ${{ github.repository }}:v2408.1b-${{ env.branch_name }}
+          IMAGE_NAME: ${{ github.repository }}:beta-v1.0.1-${{ env.branch_name }}
+        run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Docker Build DB Backup
+        env:
+          IMAGE_NAME: ${{ github.repository }}-db-backup:beta-v1.0.1-${{ env.branch_name }}
+        run: docker build -f backup/Dockerfile -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} backup/
+
+      - name: Docker Push DB Backup
+        env:
+          IMAGE_NAME: ${{ github.repository }}-db-backup:beta-v1.0.1-${{ env.branch_name }}
         run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
